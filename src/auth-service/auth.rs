@@ -46,15 +46,35 @@ impl Auth for AuthService {
 
         let req = request.into_inner();
 
-        let result: Option<String> = todo!(); // Get user's uuid from `users_service`. Panic if the lock is poisoned.
+        let result = self
+            .users_service
+            .lock()
+            .unwrap()
+            .get_user_uuid(req.username, req.password);
 
-        // Match on `result`. If `result` is `None` return a SignInResponse with a the `status_code` set to `Failure`
-        // and `user_uuid`/`session_token` set to empty strings.
-        let user_uuid: String = todo!();
+        let user_uuid = match result {
+            Some(uuid) => uuid,
+            None => {
+                let reply = SignInResponse {
+                    status_code: StatusCode::Failure as i32,
+                    user_uuid: "".to_owned(),
+                    session_token: "".to_owned(),
+                };
+                return Ok(Response::new(reply));
+            }
+        };
 
-        let session_token: String = todo!(); // Create new session using `sessions_service`. Panic if the lock is poisoned.
+        let session_token = self
+            .sessions_service
+            .lock()
+            .unwrap()
+            .create_session(&user_uuid);
 
-        let reply: SignInResponse = todo!(); // Create a `SignInResponse` with `status_code` set to `Success`
+        let reply = SignInResponse {
+            status_code: StatusCode::Success as i32,
+            user_uuid,
+            session_token,
+        };
 
         Ok(Response::new(reply))
     }
@@ -67,15 +87,25 @@ impl Auth for AuthService {
 
         let req = request.into_inner();
 
-        let result: Result<(), String> = todo!(); // Create a new user through `users_service`. Panic if the lock is poisoned.
+        let result = self
+            .users_service
+            .lock()
+            .unwrap()
+            .create_user(req.username, req.password);
 
         // TODO: Return a `SignUpResponse` with the appropriate `status_code` based on `result`.
         match result {
             Ok(_) => {
-                todo!()
+                let reply = SignUpResponse {
+                    status_code: StatusCode::Success as i32,
+                };
+                Ok(Response::new(reply))
             }
             Err(_) => {
-                todo!()
+                let reply = SignUpResponse {
+                    status_code: StatusCode::Failure as i32,
+                };
+                Ok(Response::new(reply))
             }
         }
     }
@@ -89,8 +119,14 @@ impl Auth for AuthService {
         let req = request.into_inner();
 
         // TODO: Delete session using `sessions_service`.
+        self.sessions_service
+            .lock()
+            .unwrap()
+            .delete_session(&req.session_token); // change this to use uuid
 
-        let reply: SignOutResponse = todo!(); // Create `SignOutResponse` with `status_code` set to `Success`
+        let reply = SignOutResponse {
+            status_code: StatusCode::Success as i32,
+        };
 
         Ok(Response::new(reply))
     }
