@@ -3,6 +3,18 @@ name = "rust-auth-ms"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "auth"
+path = "src/auth-service/main.rs"
+
+[[bin]]
+name = "client"
+path = "src/client/main.rs"
+
+[[bin]]
+name = "health-check"
+path = "src/health-check-service/main.rs"
+
 [dependencies]
 prost-build = "0.14.1"
 tonic-build = "0.14.1"
