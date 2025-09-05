@@ -4,3 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+prost-build = "0.14.1"
+tonic-build = "0.14.1"
+tonic-prost-build = "0.14.1"
+tokio = { version = "1.27", features = [
+    "macros",
+    "rt-multi-thread",
+    "time",
+] } # used by all
+uuid = { version = "1.2", features = [
+    "v4",
+] } # used by auth and health-check services
+pbkdf2 = { version = "0.12", features = ["simple"] } # used by auth service
+rand_core = { version = "0.9.3", features = ["std"] } # used by auth service
+clap = { version = "4.2", features = ["derive"] } # used by client
+
+[build-dependencies]
+tonic-build = "0.14.1"
+tonic-prost-build = "0.14.1"
