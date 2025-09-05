@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::Mutex;
 
 use crate::{sessions::Sessions, users::Users};
@@ -115,7 +116,7 @@ mod tests {
 
         let result = auth_service.sign_in(request).await.unwrap().into_inner();
 
-        assert_eq!(result.status_code, StatusCode::Failure.into());
+        assert_eq!(result.status_code, StatusCode::Failure as i32);
         assert_eq!(result.user_uuid.is_empty(), true);
         assert_eq!(result.session_token.is_empty(), true);
     }
@@ -138,7 +139,7 @@ mod tests {
 
         let result = auth_service.sign_in(request).await.unwrap().into_inner();
 
-        assert_eq!(result.status_code, StatusCode::Failure.into());
+        assert_eq!(result.status_code, StatusCode::Failure as i32);
         assert_eq!(result.user_uuid.is_empty(), true);
         assert_eq!(result.session_token.is_empty(), true);
     }
@@ -161,7 +162,7 @@ mod tests {
 
         let result = auth_service.sign_in(request).await.unwrap().into_inner();
 
-        assert_eq!(result.status_code, StatusCode::Success.into());
+        assert_eq!(result.status_code, StatusCode::Success as i32);
         assert_eq!(result.user_uuid.is_empty(), false);
         assert_eq!(result.session_token.is_empty(), false);
     }
@@ -184,7 +185,7 @@ mod tests {
 
         let result = auth_service.sign_up(request).await.unwrap();
 
-        assert_eq!(result.into_inner().status_code, StatusCode::Failure.into());
+        assert_eq!(result.into_inner().status_code, StatusCode::Failure as i32);
     }
 
     #[tokio::test]
@@ -201,7 +202,7 @@ mod tests {
 
         let result = auth_service.sign_up(request).await.unwrap();
 
-        assert_eq!(result.into_inner().status_code, StatusCode::Success.into());
+        assert_eq!(result.into_inner().status_code, StatusCode::Success as i32);
     }
 
     #[tokio::test]
@@ -217,6 +218,6 @@ mod tests {
 
         let result = auth_service.sign_out(request).await.unwrap();
 
-        assert_eq!(result.into_inner().status_code, StatusCode::Success.into());
+        assert_eq!(result.into_inner().status_code, StatusCode::Success as i32);
     }
 }

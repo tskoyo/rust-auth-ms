@@ -17,8 +17,6 @@ path = "src/health-check-service/main.rs"
 
 [dependencies]
 prost-build = "0.14.1"
-tonic-build = "0.14.1"
-tonic-prost-build = "0.14.1"
 tokio = { version = "1.27", features = [
     "macros",
     "rt-multi-thread",
@@ -31,6 +29,11 @@ pbkdf2 = { version = "0.12", features = ["simple"] } # used by auth service
 rand_core = { version = "0.9.3", features = ["std"] } # used by auth service
 clap = { version = "4.2", features = ["derive"] } # used by client
 tonic = "0.14.2"
+rand = "0.9.2"
+argon2 = "0.5"
+hex = "0.4.3"
+base64 = "0.22.1"
+
 
 [build-dependencies]
 tonic-build = "0.14.1"
