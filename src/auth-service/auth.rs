@@ -50,7 +50,7 @@ impl Auth for AuthService {
             .users_service
             .lock()
             .unwrap()
-            .get_user_uuid(req.username, req.password);
+            .get_user_uuid(&req.username, &req.password);
 
         let user_uuid = match result {
             Some(uuid) => uuid,
@@ -91,7 +91,7 @@ impl Auth for AuthService {
             .users_service
             .lock()
             .unwrap()
-            .create_user(req.username, req.password);
+            .create_user(&req.username, &req.password);
 
         // TODO: Return a `SignUpResponse` with the appropriate `status_code` based on `result`.
         match result {
@@ -161,7 +161,7 @@ mod tests {
     async fn sign_in_should_fail_if_incorrect_password() {
         let mut users_service = UsersImpl::default();
 
-        let _ = users_service.create_user("123456".to_owned(), "654321".to_owned());
+        let _ = users_service.create_user("123456", "654321");
 
         let users_service = Box::new(Mutex::new(users_service));
         let sessions_service = Box::new(Mutex::new(SessionsImpl::default()));
@@ -184,7 +184,7 @@ mod tests {
     async fn sign_in_should_succeed() {
         let mut users_service = UsersImpl::default();
 
-        let _ = users_service.create_user("123456".to_owned(), "654321".to_owned());
+        let _ = users_service.create_user("123456", "654321");
 
         let users_service = Box::new(Mutex::new(users_service));
         let sessions_service = Box::new(Mutex::new(SessionsImpl::default()));
@@ -207,7 +207,7 @@ mod tests {
     async fn sign_up_should_fail_if_username_exists() {
         let mut users_service = UsersImpl::default();
 
-        let _ = users_service.create_user("123456".to_owned(), "654321".to_owned());
+        let _ = users_service.create_user("123456", "654321");
 
         let users_service = Box::new(Mutex::new(users_service));
         let sessions_service = Box::new(Mutex::new(SessionsImpl::default()));

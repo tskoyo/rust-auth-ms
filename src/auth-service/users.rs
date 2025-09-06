@@ -5,14 +5,13 @@ use pbkdf2::{
 };
 
 use rand::TryRngCore;
-// use rand::rngs::OsRng;
 use rand_core::OsRng;
 
 use std::collections::HashMap;
 
 pub trait Users {
-    fn create_user(&mut self, username: String, password: String) -> Result<(), String>;
-    fn get_user_uuid(&self, username: String, password: String) -> Option<String>;
+    fn create_user(&mut self, username: &str, password: &str) -> Result<(), String>;
+    fn get_user_uuid(&self, username: &str, password: &str) -> Option<String>;
     fn delete_user(&mut self, user_uuid: String);
 }
 
@@ -30,12 +29,15 @@ pub struct UsersImpl {
 }
 
 impl Users for UsersImpl {
-    fn create_user(&mut self, username: String, password: String) -> Result<(), String> {
-        // TODO: Check if username already exist. If so return an error.
+    fn create_user(&mut self, username: &str, password: &str) -> Result<(), String> {
+        let user = self.get_user_uuid(&username, &password);
+        if user.is_some() {
+            return Err("Username already exists.".to_owned());
+        }
 
         const SALT_LEN: usize = 16;
         let mut salt_bytes = [0u8; SALT_LEN];
-        OsRng.try_fill_bytes(&mut salt_bytes);
+        OsRng.try_fill_bytes(&mut salt_bytes).unwrap();
 
         let salt_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&salt_bytes);
         let salt = SaltString::from_b64(&salt_b64)
@@ -46,15 +48,26 @@ impl Users for UsersImpl {
             .map_err(|e| format!("Failed to hash password.\n{e:?}"))?
             .to_string();
 
-        let user: User = todo!(); // Create new user with unique uuid and hashed password.
+        let user = User {
+            user_uuid: uuid::Uuid::new_v4().to_string(),
+            username: username.to_owned(),
+            password: hashed_password,
+        };
 
         // TODO: Add user to `username_to_user` and `uuid_to_user`.
+        self.username_to_user
+            .insert(username.to_owned(), user.clone());
+        self.uuid_to_user.insert(user.user_uuid.clone(), user);
 
         Ok(())
     }
 
-    fn get_user_uuid(&self, username: String, password: String) -> Option<String> {
-        let user: &User = todo!(); // Retrieve `User` or return `None` is user can't be found.
+    fn get_user_uuid(&self, username: &str, password: &str) -> Option<String> {
+        //TODO: Retrieve `User` or return `None` is user can't be found.
+        let user = self.username_to_user.get(username)?;
+        if user.username != username {
+            return None;
+        }
 
         // Get user's password as `PasswordHash` instance.
         let hashed_password = user.password.clone();
@@ -64,12 +77,24 @@ impl Users for UsersImpl {
         let result = Pbkdf2.verify_password(password.as_bytes(), &parsed_hash);
 
         // TODO: If the username and password passed in matches the user's username and password return the user's uuid.
+        if result.is_ok() {
+            return Some(user.user_uuid.clone());
+        }
 
         None
     }
 
     fn delete_user(&mut self, user_uuid: String) {
         // TODO: Remove user from `username_to_user` and `uuid_to_user`.
+        if let Some(user) = self.uuid_to_user.remove(&user_uuid) {
+            println!(
+                "Deleting user {} with uuid: {}",
+                user.username, user.user_uuid
+            );
+            self.username_to_user.remove(&user.username);
+            return;
+        }
+        println!("User with uuid: {} not found", user_uuid);
     }
 }
 
@@ -81,7 +106,7 @@ mod tests {
     fn should_create_user() {
         let mut user_service = UsersImpl::default();
         user_service
-            .create_user("username".to_owned(), "password".to_owned())
+            .create_user("username", "password")
             .expect("should create user");
 
         assert_eq!(user_service.uuid_to_user.len(), 1);
@@ -92,10 +117,10 @@ mod tests {
     fn should_fail_creating_user_with_existing_username() {
         let mut user_service = UsersImpl::default();
         user_service
-            .create_user("username".to_owned(), "password".to_owned())
+            .create_user("username", "password")
             .expect("should create user");
 
-        let result = user_service.create_user("username".to_owned(), "password".to_owned());
+        let result = user_service.create_user("username", "password");
 
         assert!(result.is_err());
     }
@@ -104,26 +129,22 @@ mod tests {
     fn should_retrieve_user_uuid() {
         let mut user_service = UsersImpl::default();
         user_service
-            .create_user("username".to_owned(), "password".to_owned())
+            .create_user("username", "password")
             .expect("should create user");
 
-        assert!(
-            user_service
-                .get_user_uuid("username".to_owned(), "password".to_owned())
-                .is_some()
-        );
+        assert!(user_service.get_user_uuid("username", "password").is_some());
     }
 
     #[test]
     fn should_fail_to_retrieve_user_uuid_with_incorrect_password() {
         let mut user_service = UsersImpl::default();
         user_service
-            .create_user("username".to_owned(), "password".to_owned())
+            .create_user("username", "password")
             .expect("should create user");
 
         assert!(
             user_service
-                .get_user_uuid("username".to_owned(), "incorrect password".to_owned())
+                .get_user_uuid("username", "incorrect password")
                 .is_none()
         );
     }
@@ -132,12 +153,10 @@ mod tests {
     fn should_delete_user() {
         let mut user_service = UsersImpl::default();
         user_service
-            .create_user("username".to_owned(), "password".to_owned())
+            .create_user("username", "password")
             .expect("should create user");
 
-        let user_uuid = user_service
-            .get_user_uuid("username".to_owned(), "password".to_owned())
-            .unwrap();
+        let user_uuid = user_service.get_user_uuid("username", "password").unwrap();
 
         user_service.delete_user(user_uuid);
 
